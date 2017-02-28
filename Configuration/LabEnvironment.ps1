@@ -42,6 +42,15 @@
                     DependsOn      = "[xIPAddress]Network_$($network.Name)"
                 }
             }
+
+            if ($networkAdapter.DefaultGateway) {
+                xDefaultGatewayAddress "xDefaultGatewayAddress_$($networkAdapter.Network.Name)" {
+                    InterfaceAlias = $network.Name
+                    AddressFamily  = $network.AddressFamily
+                    Address        = $networkAdapter.DefaultGateway
+                    DependsOn      = "[xIPAddress]Network_$($network.Name)"
+                }
+            }
         }
         else {
             xDhcpClient "EnableDHCP_$($network.Name)" {
@@ -56,6 +65,7 @@
         Ensure                 = 'Present' 
         UserAuthentication     = 'Secure'
     }
+
     xFirewall AllowRDP {
         Ensure                 = 'Present'
         Name                   = 'RemoteDesktop-UserMode-In-TCP'
@@ -216,7 +226,7 @@ Configuration ManagementServer {
     Package SqlServer2016ManagementStudio {
         Name        = 'SQL Server 2016 Management Studio'
         Ensure      = 'Present'
-        ProductId   = '9C9F6116-632F-4626-88B1-3E486776C991'
+        ProductId   = 'DD9B76B0-4B93-4C50-9A9E-4D1C7C3B596F'
         Arguments   = '/install /quiet /norestart'
         LogPath     = 'C:\Setup\SSMS-Setup-ENU.txt'
         Path        = Join-Path -Path $SharePath -ChildPath 'install\SSMS-Setup-ENU.exe'
@@ -244,11 +254,11 @@ Configuration VisualStudio {
     # VS2015 :
     # - https://msdn.microsoft.com/en-us/library/ee225237.aspx
     # - https://msdn.microsoft.com/library/e2h7fzkw.aspx
-    # vs_enterprise.exe /layout e:\HyperV\Share\iso\vs2015.3.full /overridefeeduri "http://go.microsoft.com/fwlink/?LinkID=785882&clcid0x409"
+    # vs_enterprise.exe /layout e:\HyperV\Share\iso\vs2015.3.enterprise /overridefeeduri "http://go.microsoft.com/fwlink/?LinkID=785882&clcid0x409"
     bVisualStudioSetup VisualStudio2015 {
         AdminFilePath = $adminDeploymentFilePath
         Ensure = 'Present'
-        SourcePath = "$SharePath\iso\vs2015.3.full"
+        SourcePath = "$SharePath\iso\VS2015.3.Enterprise"
         SourceCredential = $ShareCredential
     }
 
@@ -276,7 +286,7 @@ Configuration SqlServer {
     }
 
     xSqlServerSetup SqlServer2016 {
-        SourcePath             = Join-Path -Path $SharePath -ChildPath 'iso\sql2016_dev'
+        SourcePath             = Join-Path -Path $SharePath -ChildPath 'iso\SQL2016.1.Developer'
         SourceFolder           = ''
         SourceCredential       = $ShareCredential
 
@@ -315,7 +325,7 @@ Configuration SqlServer {
     }
     
     xSqlServerFirewall SqlServer2016Firewall {
-        SourcePath             = Join-Path -Path $SharePath -ChildPath 'iso\sql2016_dev'
+        SourcePath             = Join-Path -Path $SharePath -ChildPath 'iso\SQL2016.1.Developer'
         SourceFolder           = ''
         Features               = [string]::Join(',', $Features)
         InstanceName           = $SqlInstanceName
@@ -342,20 +352,20 @@ Configuration TfsServer {
         Features = @('SQLENGINE','FULLTEXT','RS','AS')
     }
 
-    Package Hotfix_KB3138367 {
+    <#Package Hotfix_KB3138367 {
         Name        = 'Microsoft Visual C++ 2013 Redistributable (x64) - 12.0.40649'
         Ensure      = 'Present'
         ProductId   = '5d0723d3-cff7-4e07-8d0b-ada737deb5e6'
         Arguments   = '/install /quiet /norestart /log C:\Setup\log\KB3138367.txt'
-        LogPath     = 'C:\Setup\log\KB3138367_log.txt'
+        LogPath     = 'C:\Setup\KB3138367_log.txt'
         Path        = Join-Path -Path $SharePath -ChildPath 'install\vcredist_x64.exe'
         Credential  = $ShareCredential
-    }
+    }#>
 
     # TODO: use sa-tfs as service-account
     # NOTE: installing a TFS Server 2013 with a domain-service-account through DSC resulted in a crashing AppPool
     bTfsServerSetup TfsServer15 {
-        SourcePath                 = Join-Path -Path $SharePath -ChildPath 'iso\tfs15_rc2'
+        SourcePath                 = Join-Path -Path $SharePath -ChildPath 'iso\TFS2015.3'
         SourceCredential           = $ShareCredential
         LogPath                    = "C:\Setup\log"
         SendFeedback               = $true
